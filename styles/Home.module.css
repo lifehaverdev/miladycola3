@@ -1,3 +1,8 @@
+@font-face {
+  src: url(../fonts/cocacolaii/Coca\ Cola\ ii.ttf);
+  font-family: coke;
+}
+
 .container {
   padding: 0 2rem;
 }

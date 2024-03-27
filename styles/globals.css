@@ -6,6 +6,187 @@ body {
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
 
+.coke {
+  font-family: coke;
+}
+
+.rainbow-connected-hardwire {
+  padding-top: 5px;
+}
+
+.rainbow-connected-hardwire div {
+  gap: 12px;
+  display: flex;
+}
+
+/* this is the ethereum button */
+.rainbow-connected-hardwire div button {
+  /* computed styles */
+  align-items: center;
+  appearance: button;
+  background-attachment: scroll;
+  background-clip: border-box;
+  background-color: rgb(255, 255, 255);
+  background-image: none;
+  background-origin: padding-box;
+  background-position-x: 0%;
+  background-position-y: 0%;
+  /* background-repeat-x: repeat;
+  background-repeat-y: repeat; */
+  background-size: auto;
+  border-bottom-color: rgb(37, 41, 46);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-bottom-style: none;
+  border-bottom-width: 0px;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+  border-image-slice: 100%;
+  border-image-source: none;
+  border-image-width: 1;
+  border-left-color: rgb(37, 41, 46);
+  border-left-style: none;
+  border-left-width: 0px;
+  border-right-color: rgb(37, 41, 46);
+  border-right-style: none;
+  border-right-width: 0px;
+  border-top-color: rgb(37, 41, 46);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-top-style: none;
+  border-top-width: 0px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px 0px;
+  box-sizing: border-box;
+  color: rgb(37, 41, 46);
+  column-gap: 6px;
+  cursor: pointer;
+  display: flex;
+  font-family: SFRounded, ui-rounded, "SF Pro Rounded", -apple-system, "system-ui", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-feature-settings: normal;
+  font-kerning: auto;
+  font-optical-sizing: auto;
+  font-size: 16px;
+  font-stretch: 100%;
+  font-style: normal;
+  font-variant-alternates: normal;
+  font-variant-caps: normal;
+  font-variant-east-asian: normal;
+  font-variant-ligatures: normal;
+  font-variant-numeric: normal;
+  font-variant-position: normal;
+  font-variation-settings: normal;
+  font-weight: 700;
+  height: auto;
+  letter-spacing: normal;
+  line-height: normal;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 0px;
+  padding-block-end: 8px;
+  padding-block-start: 8px;
+  padding-bottom: 8px;
+  padding-inline-end: 10px;
+  padding-inline-start: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 8px;
+  position: relative;
+  row-gap: 6px;
+  tab-size: 4;
+  text-align: left;
+  text-indent: 0px;
+  text-rendering: auto;
+  text-shadow: none;
+  text-size-adjust: 100%;
+  text-transform: none;
+  transition-behavior: normal;
+  transition-delay: 0s;
+  transition-duration: 0.125s;
+  transition-property: all;
+  transition-timing-function: ease;
+  vertical-align: baseline;
+  width: auto;
+  word-spacing: 0px;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-border-image: none;
+}
+
+.rainbow-connected-hardwire div button div div div div div div {
+  display: block;
+  padding: 6px;
+  border-radius: 16px;
+}
+
+.rainbow-connect-hardwire div button {
+  color: var(--rk-colors-accentColorForeground);
+  box-shadow: var(--rk-shadows-connectButton);
+  background: var(--rk-colors-accentColor) !important;
+  transition: 0.125s ease;
+  position: relative;
+  padding-right: 14px !important;
+  padding-left: 14px !important;
+  height: 40px;
+  font-weight: 700;
+  font-family: var(--rk-fonts-body);
+  border-radius: var(--rk-radii-connectButton);
+  cursor: pointer;
+  text-align: left;
+  border: 0;
+  box-sizing: border-box;
+  font-size: 100%;
+  line-height: normal;
+  margin: 0;
+  margin-top: 10px;
+  padding: 0;
+  text-align: left;
+  vertical-align: baseline;
+  -webkit-tap-highlight-color: transparent;
+  --rk-blurs-modalOverlay: blur(0px);
+  --rk-fonts-body: SFRounded, ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --rk-radii-actionButton: 9999px;
+  --rk-radii-connectButton: 12px;
+  --rk-radii-menuButton: 12px;
+  --rk-radii-modal: 24px;
+  --rk-radii-modalMobile: 28px;
+  --rk-colors-accentColor: #0E76FD;
+  --rk-colors-accentColorForeground: #FFF;
+  --rk-colors-actionButtonBorder: rgba(0, 0, 0, 0.04);
+  --rk-colors-actionButtonBorderMobile: rgba(0, 0, 0, 0.06);
+  --rk-colors-actionButtonSecondaryBackground: rgba(0, 0, 0, 0.06);
+  --rk-colors-closeButton: rgba(60, 66, 66, 0.8);
+  --rk-colors-closeButtonBackground: rgba(0, 0, 0, 0.06);
+  --rk-colors-connectButtonBackground: #FFF;
+  --rk-colors-connectButtonBackgroundError: #FF494A;
+  --rk-colors-connectButtonInnerBackground: linear-gradient(0deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.06));
+  --rk-colors-connectButtonText: #25292E;
+  --rk-colors-connectButtonTextError: #FFF;
+  --rk-colors-connectionIndicator: #30E000;
+  --rk-colors-downloadBottomCardBackground: linear-gradient(126deg, rgba(255, 255, 255, 0) 9.49%, rgba(171, 171, 171, 0.04) 71.04%), #FFFFFF;
+  --rk-colors-downloadTopCardBackground: linear-gradient(126deg, rgba(171, 171, 171, 0.2) 9.49%, rgba(255, 255, 255, 0) 71.04%), #FFFFFF;
+  --rk-colors-error: #FF494A;
+  --rk-colors-generalBorder: rgba(0, 0, 0, 0.06);
+  --rk-colors-generalBorderDim: rgba(0, 0, 0, 0.03);
+  --rk-colors-menuItemBackground: rgba(60, 66, 66, 0.1);
+  --rk-colors-modalBackdrop: rgba(0, 0, 0, 0.3);
+  --rk-colors-modalBackground: #FFF;
+  --rk-colors-modalBorder: transparent;
+  --rk-colors-modalText: #25292E;
+  --rk-colors-modalTextDim: rgba(60, 66, 66, 0.3);
+  --rk-colors-modalTextSecondary: rgba(60, 66, 66, 0.6);
+  --rk-colors-profileAction: #FFF;
+  --rk-colors-profileActionHover: rgba(255, 255, 255, 0.5);
+  --rk-colors-profileForeground: rgba(60, 66, 66, 0.06);
+  --rk-colors-selectedOptionBorder: rgba(60, 66, 66, 0.1);
+  --rk-colors-standby: #FFD641;
+  --rk-shadows-connectButton: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  --rk-shadows-dialog: 0px 8px 32px rgba(0, 0, 0, 0.32);
+  --rk-shadows-profileDetailsAction: 0px 2px 6px rgba(37, 41, 46, 0.04);
+  --rk-shadows-selectedOption: 0px 2px 6px rgba(0, 0, 0, 0.24);
+  --rk-shadows-selectedWallet: 0px 2px 6px rgba(0, 0, 0, 0.12);
+  --rk-shadows-walletLogo: 0px 2px 16px rgba(0, 0, 0, 0.16);
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -14,3 +195,7 @@ a {
 * {
   box-sizing: border-box;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
