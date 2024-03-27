@@ -11,6 +11,7 @@ import SwitchChain from '../components/crypto/chainSwitch';
 import { MerkleTree } from 'merkletreejs';
 import keccak256 from 'keccak256';
 import wl from '../utils/wl';
+import promoWl from '../utils/promo';
 import reviver from '../utils/biginter';
 
 import { useReadContracts, useAccount, serialize } from 'wagmi';
@@ -32,12 +33,11 @@ const Home: NextPage = () => {
   const winners: number = 1;
   const odds = useRef<number>(0);
   const accumulated = useRef<number>(0);
-  // const root = useRef<any>();
-  // const promoRoot = useRef<any>();
 
-  let siteRoot: any;
   let tree: MerkleTree;
+  let promoTree: MerkleTree;
   let root:string;
+  let promoRoot:string;
   let proof = useRef<string[]>([]);
   let promoProof = useRef<string[]>([]);
 
@@ -48,27 +48,37 @@ const Home: NextPage = () => {
   };
 
   const makeMerkle = () => {
-    const leaves = wl.map((address) => keccak256(address));
+    const leaves = wl.map((x) => keccak256(x));
     tree = new MerkleTree(leaves, keccak256, {sortPairs: true});
     root = tree.getRoot().toString('hex');
-    //const leaf = keccak256(account.address);
-    //const proof = tree.getProof(leaf);
-    //console.log(siteRoot);
-    return {tree,siteRoot,proof,isFriend};
+    return {tree};
+  }
+
+  const makePromoMerkle = () => {
+    const promoLeaves = promoWl.map((x) => keccak256(x));
+    promoTree = new MerkleTree(promoLeaves, keccak256, {sortPairs: true});
+    promoRoot = tree.getRoot().toString('hex');
+    return {tree};
   }
 
   const makeProof = (address:any) => {
     const leaf = keccak256(address);
     const proof = tree.getHexProof(leaf);
-    // console.log(proof);
     return proof
   }
 
+  const makePromoProof = (address:any) => {
+    const promoLeaf = keccak256(address);
+    const promoProof = promoTree.getHexProof(promoLeaf);
+    return promoProof
+  }
+
   const isList = (address:any) => {
-    //console.log('isList',MerkleTree.verify(proof.current,keccak256(address),root));
-    //console.log(keccak256(address).toString('hex'));
-    //console.log(root);
     return tree.verify(proof.current, keccak256(address), root)
+  }
+
+  const isPromoList = (address:any) => {
+    return tree.verify(promoProof.current, keccak256(address), promoRoot)
   }
 
   const scrollToStats = () => {
@@ -102,7 +112,16 @@ const Home: NextPage = () => {
       },
       {
         ...colaContract,
-        functionName: 'isPromo',
+        functionName: 'promo',
+      },
+      {
+        ...colaContract,
+        functionName: 'upForGrabs'
+      },
+      {
+        ...colaContract,
+        functionName: 'freeMints',
+        args: [account.address]
       },
       {
       ...raffleContract,
@@ -122,10 +141,10 @@ const Home: NextPage = () => {
     if (account) {
       refetch();
       makeMerkle();
-      // console.log(account.addresses);
-      //proof = makeProof(account.addresses?.[0]);
+      makePromoMerkle();
     }
     if(result){
+      console.log(result);
       if(result[0].status == 'success'){
         bottlesMinted.current = reviver(serialize({ key: "bottlesMinted", value: result[0].result}));
       }
@@ -140,21 +159,26 @@ const Home: NextPage = () => {
         }
       }
       if(result[3].status == 'success'){
-        odds.current = reviver(serialize({key: "odds", value: result[3].result}));
+        freebies.current = reviver(serialize({ key: "freebies", value: result[3].result}));
       }
       if(result[4].status == 'success'){
-        accumulated.current = reviver(serialize({key: "accumulated", value: result[4].result}));
+        freebies.current = reviver(serialize({ key: "freebies", value: result[4].result}));
+      }
+      if(result[5].status == 'success'){
+        odds.current = reviver(serialize({key: "odds", value: result[5].result}));
+      }
+      if(result[6].status == 'success'){
+        accumulated.current = reviver(serialize({key: "accumulated", value: result[6].result}));
       }
 
     }
     proof.current = makeProof(account.address);
+    promoProof.current = makePromoProof(account.address);
     isFriend.current = isList(account.address);
-    grabbies.current = 0;
-    freebies.current = 0;
+    //isPromoFriend.current = isPromoList(account.address);
     isPromoFriend.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account]); // Dependency array ensures this effect runs when the account changes
-
 
   return (
     <div className={styles.container}>
@@ -183,9 +207,7 @@ const Home: NextPage = () => {
 
         <Team />
 
-        
       </main>
-      
 
     </div>
   );

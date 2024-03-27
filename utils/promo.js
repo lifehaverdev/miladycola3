@@ -1,1 +1,3 @@
-export default promoWl = [];
+const promoWl = ['notyoulol'];
+
+export default promoWl;

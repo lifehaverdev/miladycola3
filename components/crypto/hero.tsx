@@ -33,7 +33,7 @@ export default function Hero({ scroll1, mintOpen, grabbies, freebies, isPromoFri
           <div className="flex lg:flex-1">
             <Link href="/" className="-m-1.5 p-1.5">
               <span className="sr-only">MiladyCola</span>
-              <p className="coke">MiladyCola</p>
+              <p className="text-xl coke">MiladyCola</p>
             </Link>
           </div>
           <div className="flex lg:hidden">

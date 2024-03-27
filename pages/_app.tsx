@@ -11,7 +11,7 @@ import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 
 const config = getDefaultConfig({
   appName: 'MiladyCola',
-  projectId: '342',
+  projectId: '0c2139e7d8f3f50816e8e7f5b181b4e2',
   chains: [
     sepolia
     //...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [sepolia] : []),
