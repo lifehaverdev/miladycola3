@@ -12,9 +12,9 @@ import { MerkleTree } from 'merkletreejs';
 import keccak256 from 'keccak256';
 import wl from '../utils/wl';
 import promoWl from '../utils/promo';
-import reviver from '../utils/biginter';
+import { reviver, solReviver } from '../utils/biginter';
 
-import { useReadContracts, useAccount, serialize } from 'wagmi';
+import { useReadContracts, useReadContract, useAccount, serialize } from 'wagmi';
 import { ercMiladyCa, ercMiladyAbi, colaCa, colaAbi, raffleCa, raffleAbi } from '../contract-config';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -120,11 +120,6 @@ const Home: NextPage = () => {
         functionName: 'upForGrabs'
       },
       {
-        ...colaContract,
-        functionName: 'freeMints',
-        args: [account.address]
-      },
-      {
       ...raffleContract,
       functionName: 'odds'
       },
@@ -136,6 +131,13 @@ const Home: NextPage = () => {
     ]
   }); // Use the useReadContract hook to read the contract balance for the connected account
 
+  const freeMints = useReadContract({
+    ...colaContract,
+    query: {enabled: !!account},
+    functionName: 'freeMints',
+    args: [account.address as `0x${string}`]
+  })
+
   useEffect(() => {
     
     // Trigger the read contract operation when the account changes (i.e., when the user connects their wallet)
@@ -145,7 +147,7 @@ const Home: NextPage = () => {
       makePromoMerkle();
     }
     if(result){
-      console.log(result);
+      console.log(result,freeMints);
       if(result[0].status == 'success'){
         bottlesMinted.current = reviver(serialize({ key: "bottlesMinted", value: result[0].result}));
       }
@@ -163,19 +165,18 @@ const Home: NextPage = () => {
         grabbies.current = reviver(serialize({ key: "upForGrabs", value: result[3].result}));
       }
       if(result[4].status == 'success'){
-        freebies.current = reviver(serialize({ key: "freebies", value: result[4].result}));
+        odds.current = reviver(serialize({key: "odds", value: result[4].result}));
       }
       if(result[5].status == 'success'){
-        odds.current = reviver(serialize({key: "odds", value: result[5].result}));
+        accumulated.current = reviver(serialize({key: "accumulated", value: result[5].result}));
       }
-      if(result[6].status == 'success'){
-        accumulated.current = reviver(serialize({key: "accumulated", value: result[6].result}));
-      }
-
     }
     proof.current = makeProof(account.address);
     promoProof.current = makePromoProof(account.address);
     isFriend.current = isList(account.address);
+    if(freeMints.isSuccess == true){
+      freebies.current = solReviver(serialize({key: "freebies", value: freeMints.data}));
+    }
     //isPromoFriend.current = isPromoList(account.address);
     isPromoFriend.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps

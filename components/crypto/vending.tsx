@@ -5,9 +5,9 @@ import Image from 'next/image';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
-import { useWriteContract, useReadContract, serialize } from 'wagmi';
+import { useWriteContract, useReadContract, useSimulateContract, serialize } from 'wagmi';
 import { colaCa, colaAbi } from '../../contract-config';
-import reviver from '../../utils/biginter';
+import { reviver } from '../../utils/biginter';
 import { parseEther } from 'viem';
 
 const product = {
@@ -81,7 +81,7 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
         functionName: 'friendMint',
         args: [
           BigInt(amount),
-          proof
+          proof as readonly `0x${string}`[]
         ],
         value: parseEther(JSON.stringify(bottleAmount * friendPrice.current))
       })
@@ -93,7 +93,7 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
         functionName: 'promoMint',
         args: [
           BigInt(amount),
-          promoProof
+          promoProof as readonly `0x${string}`[]
         ],
         value: parseEther(JSON.stringify(bottleAmount * promoPrice.current))
       })
