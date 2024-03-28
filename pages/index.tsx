@@ -20,6 +20,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 const Home: NextPage = () => {
 
+  const account = useAccount(); // Retrieve the connected wallet account from the Wagmi context
+
   const [mintCard, mintSet] = useState(false);
   const [, chainSet] = useState(false);
 
@@ -87,7 +89,6 @@ const Home: NextPage = () => {
     }
   }
 
-  const account = useAccount(); // Retrieve the connected wallet account from the Wagmi context
   const colaContract = {
     address: colaCa,
     abi: colaAbi
@@ -159,7 +160,7 @@ const Home: NextPage = () => {
         }
       }
       if(result[3].status == 'success'){
-        freebies.current = reviver(serialize({ key: "freebies", value: result[3].result}));
+        grabbies.current = reviver(serialize({ key: "upForGrabs", value: result[3].result}));
       }
       if(result[4].status == 'success'){
         freebies.current = reviver(serialize({ key: "freebies", value: result[4].result}));

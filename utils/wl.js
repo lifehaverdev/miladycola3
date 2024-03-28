@@ -1,5 +1,6 @@
-const wl = [
-    '0xfDB0E64c4c05a97E9AeB7cB9b46A194117fF5e6e',
+const wl = ['ur not on the list lol'];
+
+ /*   '0xfDB0E64c4c05a97E9AeB7cB9b46A194117fF5e6e',
     '0x0e050b2b7adb2cae5e8593e280ed5582953f9ad2',
     '0x16556b8a0cedd4ee3e7bba741145a50d0fc4850a',
     '0x1d4b9b250b1bd41daa35d94bf9204ec1b0494ee3',
@@ -11272,7 +11273,8 @@ const wl = [
     '0xb9a70296E3B35D55d4271B7e775f77f7be7645Ae',//twilightprincess
     '0x5ba89cad1b7925083fdc91f8afc5dff954df803f',//tetsuo
     '0xA779fC675Db318dab004Ab8D538CB320D0013F42',//zodomo
-    '0x2bB97367fF26b701a60aedc213640C34F469cf38'//meino
+    '0x2bB97367fF26b701a60aedc213640C34F469cf38'
 ];
+*/
 
 export default wl;
