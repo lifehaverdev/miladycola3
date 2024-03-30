@@ -16,10 +16,10 @@ const navigation = [
 interface HeroProps {
   scroll1: () => void;
   mintOpen: () => void;
-  grabbies:React.RefObject<number>; 
-  freebies:React.RefObject<number>; 
-  isPromoFriend:React.RefObject<boolean>;
-  isFriend: React.RefObject<boolean>;
+  grabbies:number; 
+  freebies:number; 
+  isPromoFriend:boolean;
+  isFriend:boolean;
 }
 
 export default function Hero({ scroll1, mintOpen, grabbies, freebies, isPromoFriend, isFriend }: HeroProps) {

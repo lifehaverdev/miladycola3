@@ -9,10 +9,10 @@ type alert = {
 }
 
 interface AlertProps {
-  grabbies: React.RefObject<number>
-  freebies: React.RefObject<number>
-  isPromoFriend: React.RefObject<boolean>
-  isFriend: React.RefObject<boolean>
+  grabbies: number
+  freebies: number
+  isPromoFriend: boolean
+  isFriend: boolean
 }
 
 const bottleNoti: alert[] = [
@@ -22,17 +22,17 @@ const bottleNoti: alert[] = [
     { name: "Friend", value: 0, status: true, desc:"You qualify for the friend discount"}
 ]
 
-function alertNoti(bottleNoti: alert[], grabbies:React.RefObject<number>, freebies:React.RefObject<number>, isPromoFriend:React.RefObject<boolean>, isFriend:React.RefObject<boolean>) {
-    if(grabbies.current == 0){
+function alertNoti(bottleNoti: alert[], grabbies:number, freebies:number, isPromoFriend:boolean, isFriend:boolean) {
+    if(grabbies == 0){
       bottleNoti = bottleNoti.filter((x) => x.name != "Up For Grabs");
     }
-    if(freebies.current == 0){
+    if(freebies == 0){
       bottleNoti = bottleNoti.filter((x) => x.name != "Freebies");
     }
-    if(!isPromoFriend.current){
+    if(!isPromoFriend){
       bottleNoti = bottleNoti.filter((x) => x.name != "Promo Bottles");
     }
-    if(!isFriend.current){
+    if(!isFriend){
       bottleNoti = bottleNoti.filter((x) => x.name != "Friend");
     }
     

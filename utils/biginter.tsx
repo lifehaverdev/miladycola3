@@ -10,10 +10,8 @@ export const reviver = (serialized: any) => {
       }
   };
 
-export const solReviver = (serialized: any) => {
-  serialized = JSON.parse(serialized);
-  console.log(serialized);
-  const deserialized:number = parseInt(serialized.value.value,10);
-  console.log('deserialized? ',deserialized);
-  return deserialized;
-}
+// export const solReviver = (serialized: any) => {
+//   serialized = JSON.parse(serialized);
+//   const deserialized:number = parseInt(serialized.value.value,10);
+//   return deserialized;
+// }

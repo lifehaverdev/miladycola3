@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
-import { useWriteContract, useReadContract, useSimulateContract, serialize } from 'wagmi';
+import { useWriteContract, useReadContract, useSimulateContract, useWaitForTransactionReceipt, serialize } from 'wagmi';
 import { colaCa, colaAbi } from '../../contract-config';
 import { reviver } from '../../utils/biginter';
 import { parseEther } from 'viem';
@@ -30,10 +30,10 @@ type VendingProps = {
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
     proof: string[];
     promoProof: string[];
-    grabbies:React.RefObject<number>; 
-    freebies:React.RefObject<number>; 
-    isFriend: React.RefObject<boolean>;
-    isPromoFriend:React.RefObject<boolean>;
+    grabbies:number; 
+    freebies:number; 
+    isFriend: boolean;
+    isPromoFriend:boolean;
 }
 
 export default function Vending({ open, setOpen, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend }:VendingProps) {
@@ -61,6 +61,49 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
       ...colaContract,
       functionName: 'promoPrice'
     })
+
+    const {
+      data: mintConfig,
+      refetch,
+      isLoading: isLoadingSimulate,
+      isError: isErrorSimulate,
+      error: errorSimulate,
+    } = useSimulateContract({
+      chainId: 11155111,
+      address: '0x73eB323474B0597d3E20fBC4084D0E93f133a1ED',
+      args: [BigInt(1)],
+      abi: colaAbi,
+      functionName: 'mint',
+      value: 12500000000000000n,
+    });
+  
+    const {
+      writeContractAsync,
+      data: transactionHash,
+      isPending: isLoadingWrite,
+      isError: isErrorWrite,
+      error: errorWrite,
+    } = useWriteContract();
+  
+    const {
+      isFetching: isFetchingReceipt,
+      isLoading: isLoadingReceipt,
+      data: receipt,
+      isFetched,
+      isSuccess,
+      isError: isErrorReceipt,
+      error: errorTransaction,
+    } = useWaitForTransactionReceipt({
+      hash: transactionHash,
+    });
+  
+  // console.log('errorSimulate', errorSimulate)
+  // console.log('errorWrite', errorWrite)
+  // console.log('success ', isSuccess);
+  // console.log('loading ', isLoadingReceipt);
+  // console.log('fetch ', isFetched);
+  // console.log('fetching ',isFetchingReceipt);
+  
 
     const mint = (amount:number) => {
         console.log(colaContract, BigInt(amount), parseEther(JSON.stringify(bottleAmount * bottlePrice.current)))
@@ -176,20 +219,19 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                         <h3 id="information-heading" className="sr-only">
                           Product information
                         </h3>
-
                         <p className="text-2xl text-gray-900">{(() => {
-                            if(freebies && freebies.current != null && freebies!.current > 0){
+                            if(freebies > 0){
                                 return 0
                             }
-                            if(grabbies && grabbies.current != null && grabbies!.current > 0){
+                            if(grabbies > 0){
                                 return 0
                             }
-                            if(isFriend && isFriend.current) {
+                            if(isPromoFriend) {
+                              return promoPrice.current;
+                            } 
+                            if(isFriend) {
                                 return friendPrice.current;
                             }   
-                            if(isPromoFriend && isPromoFriend.current) {
-                                return promoPrice.current;
-                            } 
                             return bottlePrice.current
                         })()}
                         {product.price}</p>
@@ -219,60 +261,74 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                         </div>
                       </section>
                       <section aria-labelledby="options-heading" className="mt-6">
-                        <h3 id="options-heading" className="sr-only">
-                          Product options
-                        </h3>
-                        <form className="max-w-xs mx-auto">
-                            <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Choose quantity:</label>
-                            <div className="relative flex items-center max-w-[11rem]">
-                                <button onClick={() => {setBottleAmount(bottleAmount - 1)}} disabled={bottleAmount==0}
-                                type="button" id="decrement-button" data-input-counter-decrement="bottles-input" className="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-s-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
-                                    <svg className="w-3 h-3 text-gray-900 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
-                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1h16"/>
-                                    </svg>
-                                </button>
-                                <input type="text" id="bottles-input" data-input-counter data-input-counter-min="1" data-input-counter-max="5" aria-describedby="helper-text-explanation" className="bg-gray-50 border-x-0 border-gray-300 h-11 font-medium text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full pb-6 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-                                    placeholder="" 
-                                    value={bottleAmount}
-                                    required
-                                    readOnly
-                                    />
-                                <button onClick={() => {
-                                    setBottleAmount(bottleAmount + 1);
-                                }}
-                                type="button" id="increment-button" data-input-counter-increment="bottles-input" className="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
-                                    <svg className="w-3 h-3 text-gray-900 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 1v16M1 9h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p id="helper-text-explanation" className="mt-2 text-sm text-gray-500 dark:text-gray-400">Please select the number of bottles</p>
-                        </form>
-
+                        {
+                                    (freebies > 0 || grabbies > 0) ?
+                                    (
+                                      <div></div>
+                                    ):(
+                                      <div>
+                                      <h3 id="options-heading" className="sr-only">
+                                        Product options
+                                      </h3>
+                                      <form className="max-w-xs mx-auto">
+                                          <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Choose quantity:</label>
+                                          <div className="relative flex items-center max-w-[11rem]">
+                                              <button onClick={() => {setBottleAmount(bottleAmount - 1)}} disabled={bottleAmount==0}
+                                              type="button" id="decrement-button" data-input-counter-decrement="bottles-input" className="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-s-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
+                                                  <svg className="w-3 h-3 text-gray-900 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
+                                                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1h16"/>
+                                                  </svg>
+                                              </button>
+                                              <input type="text" id="bottles-input" data-input-counter data-input-counter-min="1" data-input-counter-max="5" aria-describedby="helper-text-explanation" className="bg-gray-50 border-x-0 border-gray-300 h-11 font-medium text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full pb-6 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
+                                                  placeholder="" 
+                                                  value={bottleAmount}
+                                                  required
+                                                  readOnly
+                                                  />
+                                              <button onClick={() => {
+                                                  setBottleAmount(bottleAmount + 1);
+                                              }}
+                                              type="button" id="increment-button" data-input-counter-increment="bottles-input" className="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
+                                                  <svg className="w-3 h-3 text-gray-900 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                                                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 1v16M1 9h16"/>
+                                                  </svg>
+                                              </button>
+                                          </div>
+                                          <p id="helper-text-explanation" className="mt-2 text-sm text-gray-500 dark:text-gray-400">Please select the number of bottles</p>
+                                      </form>
+                                      </div>
+                                      )
+                                    }
                           <div className="mt-6">
                             <button
-                              className="flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50"
+                              className={`flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white hover:bg-gayblue-700 focus:outline-none focus:ring-2 focus:ring-gayblue-500 focus:ring-offset-2 focus:ring-offset-gray-50 bg-indigo-600 
+                                          ${isPending ? 'opacity-50 cursor-not-allowed': 
+                                          isSuccess ? 'bg-green-400' : 'bg-gayblue-600'}`}
                               onClick={()=>{
-                                if(grabbies.current && grabbies.current > 0){
+                                if(grabbies > 0){
                                   grabMint();
-                                } else if (freebies.current && freebies.current > 0){
+                                } else if (freebies > 0){
                                   freebieMint();
-                                } else if (isPromoFriend.current){
+                                } else if (isPromoFriend){
                                   promoMint(bottleAmount,promoProof);
-                                } else if (isFriend.current){
+                                } else if (isFriend){
                                   friendMint(bottleAmount,proof);
                                 } else {
-                                  mint(bottleAmount);
+                                  //mint(bottleAmount);
+                                  if(mintConfig){
+                                    writeContract(mintConfig.request);
+                                  }
+                                  
                                 }
                                 
                               }}
                             >
                               {
                                 isPending ? "Pending..." : 
-                                isPromoFriend.current ? "Promo Mint" : 
-                                isFriend.current ? "Friend Mint" : 
-                                grabbies.current && grabbies.current > 0 ? "Grab Free Mint" :
-                                freebies.current && freebies.current > 0 ? "Freebie Mint" :
+                                isPromoFriend ? "Promo Mint" : 
+                                isFriend ? "Friend Mint" : 
+                                grabbies > 0 ? "Grab Free Mint" :
+                                freebies > 0 ? "Freebie Mint" :
                                 "Mint"
                               }
                             </button>

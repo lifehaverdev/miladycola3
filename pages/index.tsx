@@ -1,3 +1,5 @@
+'use client';
+
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
@@ -7,15 +9,18 @@ import Hero from '../components/crypto/hero';
 import Feature from '../components/elements/feature';
 import Stats from '../components/crypto/stats';
 import Vending from '../components/crypto/vending';
+import Profile from '../components/crypto/profile';
 import SwitchChain from '../components/crypto/chainSwitch';
+
+import { reviver } from '../utils/biginter';
+
 import { MerkleTree } from 'merkletreejs';
 import keccak256 from 'keccak256';
 import wl from '../utils/wl';
 import promoWl from '../utils/promo';
-import { reviver, solReviver } from '../utils/biginter';
 
 import { useReadContracts, useReadContract, useAccount, serialize } from 'wagmi';
-import { ercMiladyCa, ercMiladyAbi, colaCa, colaAbi, raffleCa, raffleAbi } from '../contract-config';
+import { ercMiladyCa, ercMiladyAbi, colaCa, colaAbi, raffleCa, raffleAbi, colaClassicCa, colaClassicAbi, colaV2Ca, colaV2Abi } from '../contract-config';
 import React, { useEffect, useRef, useState } from 'react';
 
 const Home: NextPage = () => {
@@ -25,23 +30,41 @@ const Home: NextPage = () => {
   const [mintCard, mintSet] = useState(false);
   const [, chainSet] = useState(false);
 
-  const saleOn = useRef<boolean>(false);
-  const promo = useRef<boolean>(false);
-  const grabbies = useRef<number>(0);
-  const freebies = useRef<number>(0);
-  const isPromoFriend = useRef<boolean>(false);
-  const isFriend = useRef<boolean>(false);
-  const bottlesMinted = useRef<number>(0);  
-  const winners: number = 1;
-  const odds = useRef<number>(0);
-  const accumulated = useRef<number>(0);
+  const [colaInfo, setColaInfo] = useState(
+    {
+      saleOn: false,
+      promo: false,
+      grabbies: 0,
+      freebies: 0,
+      bottlesMinted: 0
+    }
+  )
+
+  const [raffleInfo, setRaffleInfo] = useState(
+    {
+      winners: 1, //make 0 later
+      odds: 306,
+      accumulated: 0,
+      cutoff: 4,
+      end: 0,
+    }
+  )
+
+  const [walletInfo, setWalletInfo] = useState(
+    {
+      isFriend: false,
+      isPromoFriend: false,
+      liveBottles: 0,
+      totalBottles: 0,
+      friendProof: [''],
+      promoProof: ['']
+    }
+  )
 
   let tree: MerkleTree;
   let promoTree: MerkleTree;
   let root:string;
   let promoRoot:string;
-  let proof = useRef<string[]>([]);
-  let promoProof = useRef<string[]>([]);
 
   const statsRef = useRef<HTMLDListElement>(null)
 
@@ -55,6 +78,7 @@ const Home: NextPage = () => {
     root = tree.getRoot().toString('hex');
     return {tree};
   }
+  makeMerkle();
 
   const makePromoMerkle = () => {
     const promoLeaves = promoWl.map((x) => keccak256(x));
@@ -62,6 +86,7 @@ const Home: NextPage = () => {
     promoRoot = tree.getRoot().toString('hex');
     return {tree};
   }
+  makePromoMerkle();
 
   const makeProof = (address:any) => {
     const leaf = keccak256(address);
@@ -76,11 +101,11 @@ const Home: NextPage = () => {
   }
 
   const isList = (address:any) => {
-    return tree.verify(proof.current, keccak256(address), root)
+    return tree.verify(walletInfo.friendProof, keccak256(address), root)
   }
 
   const isPromoList = (address:any) => {
-    return tree.verify(promoProof.current, keccak256(address), promoRoot)
+    return tree.verify(walletInfo.promoProof, keccak256(address), promoRoot)
   }
 
   const scrollToStats = () => {
@@ -101,6 +126,14 @@ const Home: NextPage = () => {
     address: ercMiladyCa,
     abi: ercMiladyAbi
   } as const
+  const colaClassicContract = {
+    address: colaClassicCa,
+    abi: colaClassicAbi
+  } as const
+  const colaV2Contract = {
+    address: colaV2Ca,
+    abi: colaV2Abi
+  } as const
   const { data: result, refetch } = useReadContracts({
     contracts: [
       {
@@ -120,13 +153,14 @@ const Home: NextPage = () => {
         functionName: 'upForGrabs'
       },
       {
-      ...raffleContract,
-      functionName: 'odds'
-      },
-      {
         ...miladyERC,
         functionName: 'balanceOf',
-        args: ["0x6A0a993cc824457734EC7Cac50744a34EcAf34D4"]
+        args: [raffleCa]
+      },
+      {
+        ...raffleContract,
+        functionName: 'readContest',
+        args: [1]
       }
     ]
   }); // Use the useReadContract hook to read the contract balance for the connected account
@@ -138,49 +172,126 @@ const Home: NextPage = () => {
     args: [account.address as `0x${string}`]
   })
 
+  const v3Bottles = useReadContract({
+    ...colaContract,
+    query: {enabled: !!account},
+    functionName: 'tokensOfOwner',
+    args: [account.address as `0x${string}`]
+  })
+
+  const v1Bottles = useReadContract({
+    ...colaClassicContract,
+    query: {enabled: !!account},
+    functionName: 'balanceOf',
+    args: [account.address as `0x${string}`]
+  })
+
+  const v2Bottles = useReadContract({
+    ...colaV2Contract,
+    query: {enabled: !!account},
+    functionName: 'balanceOf',
+    args: [account.address as `0x${string}`]
+  })
+
+  const game = useReadContract({
+    ...raffleContract,
+    functionName: 'readContest',
+    args: [BigInt(1)]
+  })
+
   useEffect(() => {
-    
+    refetch();
+    //console.log(game);
     // Trigger the read contract operation when the account changes (i.e., when the user connects their wallet)
-    if (account) {
-      refetch();
+    if (account.address) {
       makeMerkle();
       makePromoMerkle();
+      if(freeMints.isSuccess == true){
+        colaInfo.freebies = reviver(serialize({ key: "freebies", value: freeMints.data}));
+      }
+      if(v1Bottles.isSuccess == true){
+        walletInfo.totalBottles += reviver(serialize({ key: "v1Bottles", value: v1Bottles.data}))
+      }
+      if(v2Bottles.isSuccess == true){
+        walletInfo.totalBottles += reviver(serialize({ key: "v2Bottles", value: v2Bottles.data}));
+      }
+      if(v3Bottles.isSuccess == true){
+        const allV3Bottles = v3Bottles.data.map((id) => {return reviver(serialize({key: "bottleId", value: id}))})
+        const liveBottleIds = allV3Bottles.filter((x) => x >= raffleInfo.cutoff);
+        // setWalletInfo({
+        //   ...walletInfo,
+        //   liveBottles: liveBottleIds.length,
+        //   totalBottles: allV3Bottles.length
+        // }) //idk why this doesnt work tbh
+        walletInfo.liveBottles = liveBottleIds.length;
+        walletInfo.totalBottles += allV3Bottles.length;
+        //console.log('v3 total ', walletInfo.totalBottles)
+      }
+      setWalletInfo({
+        ...walletInfo,
+        friendProof: makeProof(account.address),
+        promoProof: makePromoProof(account.address),
+        isFriend: isList(account.address),
+        isPromoFriend: colaInfo.promo && false //isPromoList(account.address)
+      })
     }
     if(result){
-      console.log(result,freeMints);
+      console.log(result);
       if(result[0].status == 'success'){
-        bottlesMinted.current = reviver(serialize({ key: "bottlesMinted", value: result[0].result}));
+        colaInfo.bottlesMinted = reviver(serialize({ key: "bottlesMinted", value: result[0].result}));
       }
+      //saleOn
       if(result[1].status == 'success'){
+        //console.log('saleOn result ',result[1].result);
         if(typeof result[1].result == 'boolean'){
-          saleOn.current = result[1].result;
+          colaInfo.saleOn = result[1].result
         }
       }
       if(result[2].status == 'success'){
         if(typeof result[2].result == 'boolean'){
-          promo.current = result[2].result;
+          colaInfo.promo = result[2].result;
         }
       }
       if(result[3].status == 'success'){
-        grabbies.current = reviver(serialize({ key: "upForGrabs", value: result[3].result}));
+        colaInfo.grabbies = reviver(serialize({ key: "upForGrabs", value: result[3].result}));
       }
       if(result[4].status == 'success'){
-        odds.current = reviver(serialize({key: "odds", value: result[4].result}));
+        raffleInfo.accumulated = reviver(serialize({key: "accumulated", value: result[4].result}));
       }
       if(result[5].status == 'success'){
-        accumulated.current = reviver(serialize({key: "accumulated", value: result[5].result}));
+        console.log(result[5].result)
+        // if(result[6].result.length > 0)
+        //   const end = reviver(serialize({key: "end", value: result[6].result[0]}))
+        //   const start = reviver(serialize({key: "start", value: result[6].result[1]}));
+        //   setRaffleInfo({
+        //     ...raffleInfo,
+        //       winners: 1, //make 0 later
+        //       odds: end - start,
+        //       cutoff: reviver(serialize({key: "start", value: result[6].result[5]})),
+        //       end: 0,
+        //   })
+        
+        
       }
     }
-    proof.current = makeProof(account.address);
-    promoProof.current = makePromoProof(account.address);
-    isFriend.current = isList(account.address);
-    if(freeMints.isSuccess == true){
-      freebies.current = solReviver(serialize({key: "freebies", value: freeMints.data}));
-    }
-    //isPromoFriend.current = isPromoList(account.address);
-    isPromoFriend.current = false;
+    // if(game.isSuccess){
+    //   console.log(typeof game.data);
+    //   if(typeof game.data:Game == 'object'){
+    //     setRaffleInfo({
+    //       ...raffleInfo,
+    //         winners: 1, //make 0 later
+    //         odds: reviver(serialize({key: "end", value: game.data[6]})) - reviver(serialize({key: "start", value: game.data[5]})),
+    //         accumulated: 0,
+    //         cutoff: 4,
+    //         end: 0,
+    //     })
+    //   }
+    // }
+  
+    //console.log('game',game.data);
+    //console.log(colaInfo, walletInfo, raffleInfo);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account]); // Dependency array ensures this effect runs when the account changes
+  }, [account.address,result]) // Dependency array ensures this effect runs when the account changes
 
   return (
     <div className={styles.container}>
@@ -199,11 +310,13 @@ const Home: NextPage = () => {
 
         <SwitchChain setOpen={chainSet}/>
 
-        <Hero scroll1={scrollToStats} mintOpen={toggleOpen} grabbies={grabbies} freebies={freebies} isPromoFriend={isPromoFriend} isFriend={isFriend} />
+        <Hero scroll1={scrollToStats} mintOpen={toggleOpen} grabbies={colaInfo.grabbies} freebies={colaInfo.freebies} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} />
 
-        <Stats bottlesMinted={bottlesMinted.current} winners={winners} accumulated={accumulated.current} odds={odds.current} statsRef={statsRef}/>
+        <Stats bottlesMinted={colaInfo.bottlesMinted} winners={raffleInfo.winners} accumulated={raffleInfo.accumulated} odds={raffleInfo.odds} statsRef={statsRef}/>
 
-        <Vending open={mintCard} setOpen={mintSet} proof={proof.current} promoProof={promoProof.current} grabbies={grabbies} freebies={freebies} isPromoFriend={isPromoFriend} isFriend={isFriend} />
+        <Profile liveBottles={walletInfo.liveBottles} odds={raffleInfo.odds} totalBottles={walletInfo.totalBottles}/>
+
+        <Vending open={mintCard} setOpen={mintSet} proof={walletInfo.friendProof} promoProof={walletInfo.promoProof} grabbies={colaInfo.grabbies} freebies={colaInfo.freebies} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} />
 
         <Feature />
 
