@@ -1,3 +1,5 @@
+import { serialize } from 'wagmi';
+
 export const reviver = (serialized: any) => {
     serialized = JSON.parse(serialized);
       if (typeof serialized === 'object' && serialized.value !== null) {
@@ -9,6 +11,12 @@ export const reviver = (serialized: any) => {
         }
       }
   };
+
+export const smol = (key:string, value:(bigint | null | undefined)) => {
+  if(value){
+    return reviver(serialize({ key: key, value: value}))
+  }
+}
 
 // export const solReviver = (serialized: any) => {
 //   serialized = JSON.parse(serialized);

@@ -1,11 +1,13 @@
 'use client'
 
-import { Fragment, useState, useEffect, useRef } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
-import { useWriteContract, useReadContract, useSimulateContract, useWaitForTransactionReceipt, serialize } from 'wagmi';
+import { useWriteContract, useReadContract, serialize, useWaitForTransactionReceipt } from 'wagmi';
+  //useSimulateContract, useWaitForTransactionReceipt, 
+  
 import { colaCa, colaAbi } from '../../contract-config';
 import { reviver } from '../../utils/biginter';
 import { parseEther } from 'viem';
@@ -28,20 +30,25 @@ function classNames(...classes:any) {
 type VendingProps = {
     open: boolean,
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
+    setCelebrate: React.Dispatch<React.SetStateAction<boolean>>
     proof: string[];
     promoProof: string[];
     grabbies:number; 
     freebies:number; 
     isFriend: boolean;
     isPromoFriend:boolean;
+    totalSupply:number;
+    lastBottle:number;
 }
 
-export default function Vending({ open, setOpen, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend }:VendingProps) {
-    const bottlePrice = useRef<number>(0);
-    const friendPrice = useRef<number>(0);
-    const promoPrice = useRef<number>(0);
+export default function Vending({ open, setOpen, setCelebrate, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend, totalSupply,  lastBottle }:VendingProps) {
+    const [priceInfo, setPriceInfo] = useState({
+      bottlePrice: 0,
+      friendPrice: 0,
+      promoPrice: 0
+    })  
     const [bottleAmount, setBottleAmount] = useState(1);
-    const { data:hash, isPending, writeContract } = useWriteContract();
+    const { data:hash, isPending, isSuccess, writeContract } = useWriteContract();
     const colaContract = {
         address: colaCa,
         abi: colaAbi
@@ -62,40 +69,39 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
       functionName: 'promoPrice'
     })
 
-    const {
-      data: mintConfig,
-      refetch,
-      isLoading: isLoadingSimulate,
-      isError: isErrorSimulate,
-      error: errorSimulate,
-    } = useSimulateContract({
-      chainId: 11155111,
-      address: '0x73eB323474B0597d3E20fBC4084D0E93f133a1ED',
-      args: [BigInt(1)],
-      abi: colaAbi,
-      functionName: 'mint',
-      value: 12500000000000000n,
-    });
+
+    // const {
+    //   data: mintConfig,
+    //   refetch,
+    //   isLoading: isMintLoadingSimulate,
+    //   isError: isMintErrorSimulate,
+    //   error: mintErrorSimulate,
+    // } = useSimulateContract({
+    //   ...colaContract,
+    //   args: [BigInt(bottleAmount)],
+    //   functionName: 'mint',
+    //   value: BigInt(priceInfo.bottlePrice * bottleAmount),
+    // });
   
-    const {
-      writeContractAsync,
-      data: transactionHash,
-      isPending: isLoadingWrite,
-      isError: isErrorWrite,
-      error: errorWrite,
-    } = useWriteContract();
+    // const {
+    //   writeContractAsync,
+    //   data: transactionHash,
+    //   isPending: isLoadingWrite,
+    //   isError: isErrorWrite,
+    //   error: errorWrite,
+    // } = useWriteContract();
   
-    const {
-      isFetching: isFetchingReceipt,
-      isLoading: isLoadingReceipt,
-      data: receipt,
-      isFetched,
-      isSuccess,
-      isError: isErrorReceipt,
-      error: errorTransaction,
-    } = useWaitForTransactionReceipt({
-      hash: transactionHash,
-    });
+    // const {
+    //   isFetching: isFetchingReceipt,
+    //   isLoading: isLoadingReceipt,
+    //   data: receipt,
+    //   isFetched,
+    //   isSuccess,
+    //   isError: isErrorReceipt,
+    //   error: errorTransaction,
+    // } = useWaitForTransactionReceipt({
+    //   hash: transactionHash,
+    // });
   
   // console.log('errorSimulate', errorSimulate)
   // console.log('errorWrite', errorWrite)
@@ -103,19 +109,44 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
   // console.log('loading ', isLoadingReceipt);
   // console.log('fetch ', isFetched);
   // console.log('fetching ',isFetchingReceipt);
+
+  const MintButton = () => {
+    return (
+      <div className="mt-6">
+        <button
+          className={`flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white hover:bg-gayblue-700 focus:outline-none focus:ring-2 focus:ring-gayblue-500 focus:ring-offset-2 focus:ring-offset-gray-50 bg-gayblue-600 
+                      ${isPending ? 'opacity-50 cursor-not-allowed': 
+                      isSuccess ? 'bg-green-400' : 'bg-gayblue-600'}`}
+          type="submit"
+        >
+          {
+            isPending ? "Pending..." : 
+            isPromoFriend ? "Promo Mint" : 
+            isFriend ? "Friend Mint" : 
+            grabbies > 0 ? "Grab Free Mint" :
+            freebies > 0 ? "Freebie Mint" :
+            isConfirming ? "Confirming..." :
+            isConfirmed ? "The Bottles are on your Tab!" :
+            "Mint"
+          }
+        </button>
+        {hash && <div>Transaction Hash: <a href={`https://sepolia.etherscan.io/tx/${hash}`}>view on etherscan</a></div>}
+      </div>
+    )
+  }
   
 
     const mint = (amount:number) => {
-        console.log(colaContract, BigInt(amount), parseEther(JSON.stringify(bottleAmount * bottlePrice.current)))
-        writeContract(
-          {
-            ...colaContract,
-            functionName: 'mint',
-            args: [
-                BigInt(amount)
-            ],
-            value: parseEther(JSON.stringify(bottleAmount * bottlePrice.current))
-          })
+        //console.log(colaContract, BigInt(amount), parseEther(JSON.stringify(bottleAmount * priceInfo.bottlePrice)))
+      writeContract(
+        {
+          ...colaContract,
+          functionName: 'mint',
+          args: [
+              BigInt(amount)
+          ],
+          value: parseEther(JSON.stringify(bottleAmount * priceInfo.bottlePrice))
+        })
     }
 
     const friendMint = (amount:number, proof:string[]) => {
@@ -126,7 +157,7 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
           BigInt(amount),
           proof as readonly `0x${string}`[]
         ],
-        value: parseEther(JSON.stringify(bottleAmount * friendPrice.current))
+        value: parseEther(JSON.stringify(bottleAmount * priceInfo.friendPrice))
       })
     }
 
@@ -138,7 +169,7 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
           BigInt(amount),
           promoProof as readonly `0x${string}`[]
         ],
-        value: parseEther(JSON.stringify(bottleAmount * promoPrice.current))
+        value: parseEther(JSON.stringify(bottleAmount * priceInfo.promoPrice))
       })
     }
 
@@ -156,16 +187,44 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
         })
     }
 
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = 
+      useWaitForTransactionReceipt({ 
+        hash, 
+    }) 
+
+    const closeCard = (hash:string | null) => {
+      setOpen(false)
+      if(hash){
+        setCelebrate(true);
+      }
+    }
+
+    async function submit(e: React.FormEvent<HTMLFormElement>) {
+      e.preventDefault() 
+      console.log('submitting?');
+      if(grabbies > 0){
+        grabMint();
+      } else if (freebies > 0){
+        freebieMint();
+      } else if (isPromoFriend){
+        promoMint(bottleAmount,promoProof);
+      } else if (isFriend){
+        friendMint(bottleAmount,proof);
+      } else {
+        mint(bottleAmount);
+      }
+    }
+
     useEffect(() => {
         //console.log(readFriendPrice,readBottlePrice);
         if(readFriendPrice.isSuccess === true){
-            friendPrice.current = reviver(serialize({key: "friendPrice", value: readFriendPrice.data}));
+            priceInfo.friendPrice = reviver(serialize({key: "friendPrice", value: readFriendPrice.data}));
         }
         if(readBottlePrice.isSuccess === true){
-            bottlePrice.current = reviver(serialize({key: "bottlePrice", value: readBottlePrice.data}));
+            priceInfo.bottlePrice = reviver(serialize({key: "bottlePrice", value: readBottlePrice.data}));
         }
         if(readPromoPrice.isSuccess === true){
-          promoPrice.current = reviver(serialize({key: "promoPrice", value: readPromoPrice.data}))
+          priceInfo.promoPrice = reviver(serialize({key: "promoPrice", value: readPromoPrice.data}))
         }
     })
 
@@ -200,7 +259,7 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                   <button
                     type="button"
                     className="absolute right-4 top-4 text-gray-400 hover:text-gray-500 sm:right-6 sm:top-8 md:right-6 md:top-6 lg:right-8 lg:top-8"
-                    onClick={() => setOpen(false)}
+                    onClick={() => closeCard(hash as `0x${string}`)}
                   >
                     <span className="sr-only">Close</span>
                     <XMarkIcon className="h-6 w-6" aria-hidden="true" />
@@ -214,7 +273,6 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                     </div>
                     <div className="sm:col-span-8 lg:col-span-7">
                       <h2 className="text-2xl font-bold text-gray-900 sm:pr-12">{product.name}</h2>
-
                       <section aria-labelledby="information-heading" className="mt-3">
                         <h3 id="information-heading" className="sr-only">
                           Product information
@@ -227,16 +285,14 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                                 return 0
                             }
                             if(isPromoFriend) {
-                              return promoPrice.current;
+                              return (priceInfo.promoPrice * bottleAmount).toFixed(5);
                             } 
                             if(isFriend) {
-                                return friendPrice.current;
+                                return (priceInfo.friendPrice * bottleAmount).toFixed(5);
                             }   
-                            return bottlePrice.current
+                            return (priceInfo.bottlePrice * bottleAmount).toFixed(5);
                         })()}
                         {product.price}</p>
-
-                        {/* Reviews */}
                         <div className="mt-3">
                           <h4 className="sr-only">Reviews</h4>
                           <div className="flex items-center">
@@ -264,13 +320,16 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                         {
                                     (freebies > 0 || grabbies > 0) ?
                                     (
-                                      <div></div>
+                                      <MintButton/>
                                     ):(
                                       <div>
                                       <h3 id="options-heading" className="sr-only">
                                         Product options
                                       </h3>
-                                      <form className="max-w-xs mx-auto">
+                                      <form 
+                                        className="max-w-xs mx-auto"
+                                        onSubmit={submit}
+                                        >
                                           <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Choose quantity:</label>
                                           <div className="relative flex items-center max-w-[11rem]">
                                               <button onClick={() => {setBottleAmount(bottleAmount - 1)}} disabled={bottleAmount==0}
@@ -285,9 +344,10 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                                                   required
                                                   readOnly
                                                   />
-                                              <button onClick={() => {
-                                                  setBottleAmount(bottleAmount + 1);
-                                              }}
+                                              <button 
+                                              onClick={() => {setBottleAmount(bottleAmount + 1);}}
+                                              disabled={totalSupply + bottleAmount == lastBottle}
+
                                               type="button" id="increment-button" data-input-counter-increment="bottles-input" className="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
                                                   <svg className="w-3 h-3 text-gray-900 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
                                                       <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 1v16M1 9h16"/>
@@ -295,45 +355,13 @@ export default function Vending({ open, setOpen, proof, promoProof, grabbies, fr
                                               </button>
                                           </div>
                                           <p id="helper-text-explanation" className="mt-2 text-sm text-gray-500 dark:text-gray-400">Please select the number of bottles</p>
+                                          <MintButton/>
                                       </form>
                                       </div>
                                       )
                                     }
-                          <div className="mt-6">
-                            <button
-                              className={`flex w-full items-center justify-center rounded-md border border-transparent px-8 py-3 text-base font-medium text-white hover:bg-gayblue-700 focus:outline-none focus:ring-2 focus:ring-gayblue-500 focus:ring-offset-2 focus:ring-offset-gray-50 bg-indigo-600 
-                                          ${isPending ? 'opacity-50 cursor-not-allowed': 
-                                          isSuccess ? 'bg-green-400' : 'bg-gayblue-600'}`}
-                              onClick={()=>{
-                                if(grabbies > 0){
-                                  grabMint();
-                                } else if (freebies > 0){
-                                  freebieMint();
-                                } else if (isPromoFriend){
-                                  promoMint(bottleAmount,promoProof);
-                                } else if (isFriend){
-                                  friendMint(bottleAmount,proof);
-                                } else {
-                                  //mint(bottleAmount);
-                                  if(mintConfig){
-                                    writeContract(mintConfig.request);
-                                  }
-                                  
-                                }
-                                
-                              }}
-                            >
-                              {
-                                isPending ? "Pending..." : 
-                                isPromoFriend ? "Promo Mint" : 
-                                isFriend ? "Friend Mint" : 
-                                grabbies > 0 ? "Grab Free Mint" :
-                                freebies > 0 ? "Freebie Mint" :
-                                "Mint"
-                              }
-                            </button>
-                          </div>
                       </section>
+
                     </div>
                   </div>
                 </div>
