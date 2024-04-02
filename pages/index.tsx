@@ -25,6 +25,7 @@ import { ercMiladyCa, ercMiladyAbi, colaCa, colaAbi, raffleCa, raffleAbi, colaCl
 import React, { useEffect, useRef, useState } from 'react';
 
 const Home: NextPage = () => {
+  const chainId = 11155111;
 
   const account = useAccount(); // Retrieve the connected wallet account from the Wagmi context
 
@@ -34,28 +35,7 @@ const Home: NextPage = () => {
 
   const celebrate = () => {
     mintSet(false);
-    
   }
-
-  const [colaInfo, setColaInfo] = useState(
-    {
-      saleOn: false,
-      promo: false,
-      grabbies: 0,
-      freebies: 0,
-      bottlesMinted: 0
-    }
-  )
-
-  const [raffleInfo, setRaffleInfo] = useState(
-    {
-      winners: 1, //make 0 later
-      odds: 26,
-      accumulated: 0,
-      cutoff: 4,
-      end: 30,
-    }
-  )
 
   const [walletInfo, setWalletInfo] = useState(
     {
@@ -123,30 +103,31 @@ const Home: NextPage = () => {
 
   const colaContract = {
     address: colaCa,
-    abi: colaAbi
+    abi: colaAbi,
+    chainId: chainId
   } as const
   const raffleContract = {
     address: raffleCa,
-    abi: raffleAbi
+    abi: raffleAbi,
+    chainId: chainId
   } as const
   const miladyERC = {
     address: ercMiladyCa,
-    abi: ercMiladyAbi
+    abi: ercMiladyAbi,
+    chainId: chainId
   } as const
   const colaClassicContract = {
     address: colaClassicCa,
-    abi: colaClassicAbi
+    abi: colaClassicAbi,
+    chainId: 1
   } as const
   const colaV2Contract = {
     address: colaV2Ca,
-    abi: colaV2Abi
+    abi: colaV2Abi,
+    chainId: 1
   } as const
-  const { data: result, isPending, refetch } = useReadContracts({
+  const { data: result, error:multiError, isPending: multiStillReading, refetch } = useReadContracts({
     contracts: [
-      {
-        ...colaContract,
-        functionName: 'totalSupply',
-      },
       {
         ...colaContract,
         functionName: 'saleOn',
@@ -157,132 +138,100 @@ const Home: NextPage = () => {
       },
       {
         ...colaContract,
+        functionName: 'totalSupply',
+      },
+      {
+        ...colaContract,
         functionName: 'upForGrabs'
       },
       {
-        ...miladyERC,
+        ...colaContract,
+        functionName: 'freeMints',
+        args: [account?.address as `0x${string}`]
+      },
+      {
+        ...colaContract,
+        functionName: 'price'
+      },
+      {
+        ...colaContract,
+        functionName: 'friendPrice'
+      },
+      {
+        ...colaContract,
+        functionName: 'promoPrice'
+      },
+      {
+        ...colaContract,
+        functionName: 'cutOffBottle'
+      },
+      {
+        ...colaContract,
+        functionName: 'tokensOfOwner',
+        args: [account?.address as `0x${string}`]
+      },
+      {
+        ...colaClassicContract,
         functionName: 'balanceOf',
-        args: [raffleCa]
+        args: [account?.address as `0x${string}`]
+      },
+      {
+        ...colaV2Contract,
+        functionName: 'balanceOf',
+        args: [account?.address as `0x${string}`]
       },
       {
         ...raffleContract,
         functionName: 'readContest',
-        args: [BigInt(1)]
+        args: [1]
+      },
+      {
+        ...miladyERC,
+        functionName: 'balanceOf',
+        args: [raffleCa as `0x${string}`]
       }
     ]
   }); // Use the useReadContract hook to read the contract balance for the connected account
 
-  const freeMints = useReadContract({
-    ...colaContract,
-    query: {enabled: !!account},
-    functionName: 'freeMints',
-    args: [account.address as `0x${string}`]
-  })
-
-  const v3Bottles = useReadContract({
-    ...colaContract,
-    query: {enabled: !!account},
-    functionName: 'tokensOfOwner',
-    args: [account.address as `0x${string}`]
-  })
-
-  const v1Bottles = useReadContract({
-    ...colaClassicContract,
-    query: {enabled: !!account},
-    functionName: 'balanceOf',
-    args: [account.address as `0x${string}`]
-  })
-
-  const v2Bottles = useReadContract({
-    ...colaV2Contract,
-    query: {enabled: !!account},
-    functionName: 'balanceOf',
-    args: [account.address as `0x${string}`]
-  })
-
   useEffect(() => {
     refetch();
-    walletInfo.totalBottles = 0;
-    //console.log(game);
-    // Trigger the read contract operation when the account changes (i.e., when the user connects their wallet)
+    //if(account){
+      //console.log('account a go in useEffect',account.address);
+      // v1Refetch()
+      // v2Refetch()
+    //}
+    
     if (account.address) {
       makeMerkle();
       makePromoMerkle();
-      if(freeMints.isSuccess == true){
-        colaInfo.freebies = smol("freebies", freeMints.data);
-      }
-      if(v1Bottles.isSuccess == true){
-        walletInfo.totalBottles += reviver(serialize({ key: "v1Bottles", value: v1Bottles.data}))
-      }
-      if(v2Bottles.isSuccess == true){
-        walletInfo.totalBottles += reviver(serialize({ key: "v2Bottles", value: v2Bottles.data}));
-      }
-      if(v3Bottles.isSuccess == true){
-        const allV3Bottles = v3Bottles.data.map((id) => {return reviver(serialize({key: "bottleId", value: id}))})
-        const liveBottleIds = allV3Bottles.filter((x) => x >= raffleInfo.cutoff);
-        // setWalletInfo({
-        //   ...walletInfo,
-        //   liveBottles: liveBottleIds.length,
-        //   totalBottles: allV3Bottles.length
-        // }) //idk why this doesnt work tbh
-        walletInfo.liveBottles = liveBottleIds.length;
-        walletInfo.totalBottles += allV3Bottles.length;
-        //console.log('v3 total ', walletInfo.totalBottles)
-      }
       setWalletInfo({
         ...walletInfo,
         friendProof: makeProof(account.address),
         promoProof: makePromoProof(account.address),
         isFriend: isList(account.address),
-        isPromoFriend: colaInfo.promo && isPromoList(account.address)
+        isPromoFriend: isPromoList(account.address)
       })
-    }
-    if(result){
-      console.log(result);
-      if(result[0].status == 'success'){
-        colaInfo.bottlesMinted = reviver(serialize({ key: "bottlesMinted", value: result[0].result}));
-      }
-      //saleOn
-      if(result[1].status == 'success'){
-        //console.log('saleOn result ',result[1].result);
-        if(typeof result[1].result == 'boolean'){
-          colaInfo.saleOn = result[1].result
-        }
-      }
-      if(result[2].status == 'success'){
-        if(typeof result[2].result == 'boolean'){
-          colaInfo.promo = result[2].result;
-        }
-      }
-      if(result[3].status == 'success'){
-        colaInfo.grabbies = reviver(serialize({ key: "upForGrabs", value: result[3].result}));
-      }
-      if(result[4].status == 'success'){
-        raffleInfo.accumulated = reviver(serialize({key: "accumulated", value: result[4].result}));
-      }
-      if(result[5].status == 'success'){
-        console.log(result[5].result)
-        // if(result[6].result.length > 0)
-        //   const end = reviver(serialize({key: "end", value: result[6].result[0]}))
-        //   const start = reviver(serialize({key: "start", value: result[6].result[1]}));
-        //   setRaffleInfo({
-        //     ...raffleInfo,
-        //       winners: 1, //make 0 later
-        //       odds: end - start,
-        //       cutoff: reviver(serialize({key: "start", value: result[6].result[5]})),
-        //       end: 0,
-        //   })
-      }
     }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account.address]) // Dependency array ensures this effect runs when the account changes
 
-  // setColaInfo({
-  //   ...colaInfo,
-  //   freebies: smol("freebies",freeMints.data)
-  // })
-
+  const [
+    saleOn, promo,
+    totalSupply,
+    upForGrabs, freeMintBalance,
+    bottlePrice, friendPrice,
+    promoPrice, cutOffBottle, v3Tokens, v1Balance,
+    v2Balance,
+    contestStats, contestBalance
+  ] = result || []
+  
+  //console.log('cutOff number ',smol("cutOff",cutOffBottle.result))
+  // bottleNoti.filter((x) => x.name != "Up For Grabs")
+  const liveBottles = v3Tokens?.result.filter((x) => x >= cutOffBottle?.result ).length
+  console.log('liveBottles',liveBottles)
+  console.log('saleOn',saleOn,'promo',promo,'totalSupply',totalSupply,'upForGrabs',upForGrabs,'freeMintBalance',freeMintBalance,'bottlePrice',bottlePrice,'friendPrice',friendPrice,'promoPrice',promoPrice,'cutOffBottle',cutOffBottle,'v3Tokens',v3Tokens,'v1Balance',v1Balance,'v2Balance',v2Balance,'raffleBalance',contestBalance,'raffleStats',contestStats)
+  
   return (
     <div className={styles.container}>
       <Head>
@@ -300,19 +249,19 @@ const Home: NextPage = () => {
 
         <SwitchChain setOpen={chainSet}/>
 
-        <Hero scroll1={scrollToStats} mintOpen={toggleOpen} grabbies={colaInfo.grabbies} freebies={colaInfo.freebies} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} />
+        <Hero scroll1={scrollToStats} mintOpen={toggleOpen} grabbies={upForGrabs} freebies={freeMintBalance} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} />
 
-        <Stats bottlesMinted={colaInfo.bottlesMinted} winners={raffleInfo.winners} accumulated={raffleInfo.accumulated} odds={raffleInfo.odds} statsRef={statsRef}/>
+        <Stats contestStats={contestStats} bottlesMinted={totalSupply} accumulated={contestBalance} statsRef={statsRef}/>
 
         {walletInfo.liveBottles > 0 ? 
-        <Profile liveBottles={walletInfo.liveBottles} odds={raffleInfo.odds} totalBottles={walletInfo.totalBottles}/>
+        <Profile liveBottles={liveBottles} contestStats={contestStats} totalBottles={walletInfo.totalBottles}/>
         :
         <></>
         }
 
         <Celebration open={party} setOpen={partySet} />
 
-        <Vending open={mintCard} setOpen={mintSet} setCelebrate={partySet} proof={walletInfo.friendProof} promoProof={walletInfo.promoProof} grabbies={colaInfo.grabbies} freebies={colaInfo.freebies} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} totalSupply={colaInfo.bottlesMinted} lastBottle={raffleInfo.end}/>
+        <Vending open={mintCard} setOpen={mintSet} setCelebrate={partySet} proof={walletInfo.friendProof} promoProof={walletInfo.promoProof} grabbies={upForGrabs} freebies={freeMintBalance} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} totalSupply={totalSupply} contestStats={contestStats}/>
 
         <Feature />
 

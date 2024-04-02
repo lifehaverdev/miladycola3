@@ -1,4 +1,5 @@
 import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { smol } from '../../utils/biginter';
 //import { string } from 'prop-types'
 
 type alert = {
@@ -9,8 +10,8 @@ type alert = {
 }
 
 interface AlertProps {
-  grabbies: number
-  freebies: number
+  grabbies: { error?: undefined; result: bigint; status: "success"; } | { error: Error; result?: undefined; status: "failure"; } | undefined;
+  freebies: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
   isPromoFriend: boolean
   isFriend: boolean
 }
@@ -22,11 +23,15 @@ const bottleNoti: alert[] = [
     { name: "Friend", value: 0, status: true, desc:"You qualify for the friend discount"}
 ]
 
-function alertNoti(bottleNoti: alert[], grabbies:number, freebies:number, isPromoFriend:boolean, isFriend:boolean) {
-    if(grabbies == 0){
+function alertNoti(
+  bottleNoti: alert[], 
+  grabbies: { error?: undefined; result: bigint; status: "success"; } | { error: Error; result?: undefined; status: "failure"; } | undefined, 
+  freebies:{ error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined, 
+  isPromoFriend:boolean, isFriend:boolean) {
+    if(grabbies && smol("grabbies",grabbies.result) == 0) {
       bottleNoti = bottleNoti.filter((x) => x.name != "Up For Grabs");
     }
-    if(freebies == 0){
+    if(freebies && smol("freebies",freebies.result) == 0 ){
       bottleNoti = bottleNoti.filter((x) => x.name != "Freebies");
     }
     if(!isPromoFriend){

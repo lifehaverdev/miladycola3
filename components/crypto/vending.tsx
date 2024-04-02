@@ -9,7 +9,7 @@ import { useWriteContract, useReadContract, serialize, useWaitForTransactionRece
   //useSimulateContract, useWaitForTransactionReceipt, 
   
 import { colaCa, colaAbi } from '../../contract-config';
-import { reviver } from '../../utils/biginter';
+import { reviver, smol } from '../../utils/biginter';
 import { parseEther } from 'viem';
 
 const product = {
@@ -33,13 +33,27 @@ type VendingProps = {
     setCelebrate: React.Dispatch<React.SetStateAction<boolean>>
     proof: string[];
     promoProof: string[];
-    grabbies:number; 
-    freebies:number; 
+    grabbies:{ error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
+    freebies:{ error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
     isFriend: boolean;
     isPromoFriend:boolean;
-    totalSupply:number;
-    lastBottle:number;
+    totalSupply:{ error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
+    contestStats:{error: Error; result?: ContestArray; status: "success"} | {
+      error: Error;
+      result?: undefined;
+      status: "failure";
+  } | {
+      error?: undefined;
+      result: unknown;
+      status: "success";
+  } | {
+      error?: undefined;
+      result: ContestArray;
+      status: "success";
+  } | undefined;
 }
+
+type ContestArray = [bigint,bigint,bigint,bigint];
 
 export default function Vending({ open, setOpen, setCelebrate, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend, totalSupply,  lastBottle }:VendingProps) {
     const [priceInfo, setPriceInfo] = useState({
@@ -70,46 +84,6 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
     })
 
 
-    // const {
-    //   data: mintConfig,
-    //   refetch,
-    //   isLoading: isMintLoadingSimulate,
-    //   isError: isMintErrorSimulate,
-    //   error: mintErrorSimulate,
-    // } = useSimulateContract({
-    //   ...colaContract,
-    //   args: [BigInt(bottleAmount)],
-    //   functionName: 'mint',
-    //   value: BigInt(priceInfo.bottlePrice * bottleAmount),
-    // });
-  
-    // const {
-    //   writeContractAsync,
-    //   data: transactionHash,
-    //   isPending: isLoadingWrite,
-    //   isError: isErrorWrite,
-    //   error: errorWrite,
-    // } = useWriteContract();
-  
-    // const {
-    //   isFetching: isFetchingReceipt,
-    //   isLoading: isLoadingReceipt,
-    //   data: receipt,
-    //   isFetched,
-    //   isSuccess,
-    //   isError: isErrorReceipt,
-    //   error: errorTransaction,
-    // } = useWaitForTransactionReceipt({
-    //   hash: transactionHash,
-    // });
-  
-  // console.log('errorSimulate', errorSimulate)
-  // console.log('errorWrite', errorWrite)
-  // console.log('success ', isSuccess);
-  // console.log('loading ', isLoadingReceipt);
-  // console.log('fetch ', isFetched);
-  // console.log('fetching ',isFetchingReceipt);
-
   const MintButton = () => {
     return (
       <div className="mt-6">
@@ -123,8 +97,8 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
             isPending ? "Pending..." : 
             isPromoFriend ? "Promo Mint" : 
             isFriend ? "Friend Mint" : 
-            grabbies > 0 ? "Grab Free Mint" :
-            freebies > 0 ? "Freebie Mint" :
+            grabbies && grabbies?.result > 0n ? "Grab Free Mint" :
+            grabbies && freebies?.result > 0n ? "Freebie Mint" :
             isConfirming ? "Confirming..." :
             isConfirmed ? "The Bottles are on your Tab!" :
             "Mint"
@@ -202,9 +176,9 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
     async function submit(e: React.FormEvent<HTMLFormElement>) {
       e.preventDefault() 
       console.log('submitting?');
-      if(grabbies > 0){
+      if(grabbies && grabbies?.result > 0n){
         grabMint();
-      } else if (freebies > 0){
+      } else if (freebies && freebies?.result > 0n){
         freebieMint();
       } else if (isPromoFriend){
         promoMint(bottleAmount,promoProof);
@@ -278,10 +252,10 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
                           Product information
                         </h3>
                         <p className="text-2xl text-gray-900">{(() => {
-                            if(freebies > 0){
+                            if(freebies && freebies?.result > 0n){
                                 return 0
                             }
-                            if(grabbies > 0){
+                            if(grabbies && grabbies?.result > 0n){
                                 return 0
                             }
                             if(isPromoFriend) {
@@ -318,7 +292,7 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
                       </section>
                       <section aria-labelledby="options-heading" className="mt-6">
                         {
-                                    (freebies > 0 || grabbies > 0) ?
+                                    ((freebies && freebies?.result > 0n) || (grabbies && grabbies?.result > 0)) ?
                                     (
                                       <MintButton/>
                                     ):(
@@ -346,7 +320,7 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
                                                   />
                                               <button 
                                               onClick={() => {setBottleAmount(bottleAmount + 1);}}
-                                              disabled={totalSupply + bottleAmount == lastBottle}
+                                              disabled={smol('totalSupply',totalSupply?.result) + bottleAmount == lastBottle}
 
                                               type="button" id="increment-button" data-input-counter-increment="bottles-input" className="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
                                                   <svg className="w-3 h-3 text-gray-900 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">

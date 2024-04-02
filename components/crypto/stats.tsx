@@ -1,28 +1,79 @@
 import React from 'react';
+import {smol} from '../../utils/biginter'
 
 type Stat = {
   name: string;
   value: number;
 };
 
+type ContestArray = [winners: bigint, first: bigint, last: bigint, goldenTicket: bigint]
+
 interface StatProps {
-  bottlesMinted: number;
+  bottlesMinted: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
+  accumulated: {
+        error: Error;
+        result?: undefined;
+        status: "failure";
+    } | {
+        error?: undefined;
+        result: unknown;
+        status: "success";
+    } | undefined;
+  contestStats: {error: Error; result?: ContestArray; status: "success"} | {
+        error: Error;
+        result?: undefined;
+        status: "failure";
+    } | {
+        error?: undefined;
+        result: unknown;
+        status: "success";
+    } | {
+        error?: undefined;
+        result: ContestArray;
+        status: "success";
+    } | undefined;
+      statsRef: React.RefObject<HTMLDListElement>;
+}
+
+type StatPropAgain = {
+  totalSupply: number;
   winners: number;
   accumulated: number;
   odds: number;
   statsRef: React.RefObject<HTMLDListElement>;
 }
 
-const statBlock: React.FC<StatProps> = ({ bottlesMinted, winners, accumulated, odds, statsRef }) => {
-  odds = parseFloat((1/odds).toFixed(4));
+const Stats
+//: React.FC<StatProps> 
+= ({ bottlesMinted, accumulated, contestStats, statsRef }:StatProps) => {
+  //console.log('stats props', bottlesMinted, accumulated, contestStats, statsRef)
+  const odds = parseFloat((1/smol("end",contestStats?.result[2] - contestStats?.result[1])).toFixed(4));
+  
+  // if(contestStats && contestStats.status == "success" && 
+  //   Array.isArray(contestStats.result) &&
+  //   contestStats.result.every((item) => typeof item === "bigint")){
+  //   console.log('we is readin the')
+  //   odds = parseFloat((1/(smol("odds",contestStats.result[2] - contestStats.result[1]))).toFixed(4))
+  //   winners = smol("winners",contestStats.result[0])
+  // }
+  // if(bottlesMinted && bottlesMinted.result){
+  //   totalSupply = smol("totalSupply",bottlesMinted.result)
+  // }
+  // if(accumulated && accumulated.result){
+  //   warChest = smol("accumulated",accumulated.result)
+  // }
+  
   let stats: Stat[] = [
-    { name: 'Bottles Minted', value: bottlesMinted },
-    { name: 'MiladyCola Winners', value: winners},
-    { name: 'Milady Accumulated', value: accumulated},
+    { name: 'Bottles Minted', value: smol("totalSupply", bottlesMinted?.result) },
+    //{ name: 'Bottles Minted', value: warChest },
+    { name: 'MiladyCola Winners', value: smol("winners",contestStats?.result[0])},
+    { name: 'Milady Accumulated', value: smol("raffleBalance", accumulated?.result) },
+    //{ name: 'Milady Accumulated', value: warChest},
     { name: 'Current Raffle Odds', value: odds},
   ]
   
   return (
+    <div id="stats" className="max-w-xl m-auto">
     <dl ref={statsRef} className="mx-auto grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-2 lg:grid-cols-4">
       {stats && stats.map((stat: Stat) => (
         <div
@@ -44,15 +95,16 @@ const statBlock: React.FC<StatProps> = ({ bottlesMinted, winners, accumulated, o
         </div>
       ))}
     </dl>
-  )
-}
-
-const Stats: React.FC<StatProps> = ({bottlesMinted, winners, accumulated, odds, statsRef}) => {
-  return(
-    <div id="stats" className="max-w-xl m-auto">
-      {statBlock({bottlesMinted, winners, accumulated, odds, statsRef})}
     </div>
   )
 }
+
+// const Stats: StatPropAgain = ({totalSupply, winners, accumulated, odds, statsRef}) => {
+//   return(
+    
+//       {statBlock({totalSupply, winners, accumulated, odds, statsRef})}
+    
+//   )
+// }
 
 export default Stats

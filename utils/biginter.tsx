@@ -12,8 +12,8 @@ export const reviver = (serialized: any) => {
       }
   };
 
-export const smol = (key:string, value:(bigint | null | undefined)) => {
-  if(value){
+export const smol = (key:string, value:(bigint | null | undefined | unknown)) => {
+  if(typeof value == 'bigint'){
     return reviver(serialize({ key: key, value: value}))
   }
 }

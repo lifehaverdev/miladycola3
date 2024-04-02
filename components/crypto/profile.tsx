@@ -1,14 +1,29 @@
+import { smol } from '../../utils/biginter'
 
-  type ProfileProps = {
-    liveBottles: number,
-    odds: number,
-    totalBottles: number
-  }
+type ContestArray = [winners: bigint, first: bigint, last: bigint, goldenTicket: bigint]
 
-  export default function Profile({liveBottles, odds, totalBottles}:ProfileProps) {
+type ProfileProps = {
+  liveBottles: number | undefined,
+  contestStats: {error: Error, result?: ContestArray, status: "success"} | {
+    error: Error,
+    result?: undefined;
+    status: "failure";
+} | {
+    error?: undefined;
+    result: unknown;
+    status: "success";
+} | {
+    error?: undefined;
+    result: ContestArray;
+    status: "success";
+} | undefined,
+  totalBottles: number
+}
+
+  export default function Profile({liveBottles, contestStats, totalBottles}:ProfileProps) {
     const stats = [
         { name: 'Live Bottles', stat: JSON.stringify(liveBottles) },
-        { name: 'Odds to Win', stat: `${(liveBottles*(1/odds)*100).toFixed(4)}%` },
+        { name: 'Odds to Win', stat: `${(liveBottles*parseFloat((1/smol("end",contestStats?.result[2] - contestStats?.result[1])).toFixed(4)))}%` },
         { name: 'Total Bottles', stat: JSON.stringify(totalBottles) },
       ]
     return (

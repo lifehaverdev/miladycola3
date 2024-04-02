@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import {
   sepolia,
+  mainnet
 } from 'wagmi/chains';
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 
@@ -13,7 +14,8 @@ const config = getDefaultConfig({
   appName: 'MiladyCola',
   projectId: '0c2139e7d8f3f50816e8e7f5b181b4e2',
   chains: [
-    sepolia
+    sepolia,
+    mainnet
     //...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [sepolia] : []),
   ],
   ssr: false,
