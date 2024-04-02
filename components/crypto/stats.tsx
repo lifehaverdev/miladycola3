@@ -61,20 +61,6 @@ const Stats
     winners = smol('winners',contestArray[0]) + 1;
   }
   
-  // if(contestStats && contestStats.status == "success" && 
-  //   Array.isArray(contestStats.result) &&
-  //   contestStats.result.every((item) => typeof item === "bigint")){
-  //   console.log('we is readin the')
-  //   odds = parseFloat((1/(smol("odds",contestStats.result[2] - contestStats.result[1]))).toFixed(4))
-  //   winners = smol("winners",contestStats.result[0])
-  // }
-  // if(bottlesMinted && bottlesMinted.result){
-  //   totalSupply = smol("totalSupply",bottlesMinted.result)
-  // }
-  // if(accumulated && accumulated.result){
-  //   warChest = smol("accumulated",accumulated.result)
-  // }
-  
   let stats: Stat[] = [
     { name: 'Bottles Minted', value: smol("totalSupply", bottlesMinted?.result) },
     //{ name: 'Bottles Minted', value: warChest },

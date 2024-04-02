@@ -10,17 +10,17 @@ type alert = {
 }
 
 interface AlertProps {
-  grabbies: { error?: undefined; result: bigint; status: "success"; } | { error: Error; result?: undefined; status: "failure"; } | undefined;
-  freebies: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
+  grabbies: { error: undefined; result: bigint; status: "success"; } | { error: Error; result: undefined; status: "failure"; } | undefined;
+  freebies: { error: Error; result?: undefined; status: "failure"; } | { error: undefined; result: bigint; status: "success"; } | undefined;
   isPromoFriend: boolean
   isFriend: boolean
 }
 
-const bottleNoti: alert[] = [
-    { name: "Up For Grabs", value: 0, status: true, desc: "FREE bottles availble while supplies last!"},
-    { name: "Freebies", value: 0, status: true, desc: "You have FREE bottles with your name on them"},
-    { name: "Promo Bottles", value: 0, status: true, desc: "Your community got you a discount!"},
-    { name: "Friend", value: 0, status: true, desc:"You qualify for the friend discount"}
+let bottleNoti: alert[] = [
+    //{ name: "Up For Grabs", value: 0, status: true, desc: "FREE bottles availble while supplies last!"},
+    //{ name: "Freebies", value: 0, status: true, desc: "You have FREE bottles with your name on them"},
+    //{ name: "Promo Bottles", value: 0, status: true, desc: "Your community got you a discount!"},
+    //{ name: "Friend", value: 0, status: true, desc:"You qualify for the friend discount"}
 ]
 
 function alertNoti(
@@ -28,18 +28,23 @@ function alertNoti(
   grabbies: { error?: undefined; result: bigint; status: "success"; } | { error: Error; result?: undefined; status: "failure"; } | undefined, 
   freebies:{ error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined, 
   isPromoFriend:boolean, isFriend:boolean) {
-    if(grabbies && smol("grabbies",grabbies.result) == 0) {
-      bottleNoti = bottleNoti.filter((x) => x.name != "Up For Grabs");
+    if(grabbies && (smol("grabbies",grabbies.result) > 0 && grabbies.status != 'failure')) {
+      //bottleNoti = bottleNoti.filter((x) => x.name != "Up For Grabs");
+      bottleNoti.push({ name: "Up For Grabs", value: 0, status: true, desc: "FREE bottles availble while supplies last!"})
     }
-    if(freebies && smol("freebies",freebies.result) == 0 ){
-      bottleNoti = bottleNoti.filter((x) => x.name != "Freebies");
+    if(freebies && (smol("freebies",freebies.result) > 0 && freebies.status != 'failure')){
+      //bottleNoti = bottleNoti.filter((x) => x.name != "Freebies");
+      bottleNoti.push({ name: "Freebies", value: 0, status: true, desc: "You have FREE bottles with your name on them"})
     }
-    if(!isPromoFriend){
-      bottleNoti = bottleNoti.filter((x) => x.name != "Promo Bottles");
+    if(isPromoFriend){
+      //bottleNoti = bottleNoti.filter((x) => x.name != "Promo Bottles");
+      bottleNoti.push({ name: "Promo Bottles", value: 0, status: true, desc: "Your community got you a discount!"})
     }
-    if(!isFriend){
-      bottleNoti = bottleNoti.filter((x) => x.name != "Friend");
+    if(isFriend){
+      //bottleNoti = bottleNoti.filter((x) => x.name != "Friend");
+      bottleNoti.push({ name: "Friend", value: 0, status: true, desc:"You qualify for the friend discount"})
     }
+    // console.log('freebies in alerts', freebies);
     
     return (
         <div>

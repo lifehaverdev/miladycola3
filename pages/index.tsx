@@ -12,6 +12,8 @@ import Vending from '../components/crypto/vending';
 import Profile from '../components/crypto/profile';
 import SwitchChain from '../components/crypto/chainSwitch';
 import Celebration from '../components/crypto/celebrate';
+import FAQ from '../components/elements/faq'
+import { Prog } from '../components/crypto/progess';
 
 import { reviver, smol } from '../utils/biginter';
 
@@ -195,11 +197,6 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     refetch();
-    //if(account){
-      //console.log('account a go in useEffect',account.address);
-      // v1Refetch()
-      // v2Refetch()
-    //}
     
     if (account.address) {
       makeMerkle();
@@ -225,6 +222,8 @@ const Home: NextPage = () => {
     v2Balance,
     contestStats, contestBalance
   ] = result || []
+
+  //console.log(result)
   
   //console.log('cutOff number ',smol("cutOff",cutOffBottle.result))
   // bottleNoti.filter((x) => x.name != "Up For Grabs")
@@ -254,19 +253,23 @@ const Home: NextPage = () => {
 
         <Hero scroll1={scrollToStats} mintOpen={toggleOpen} grabbies={upForGrabs} freebies={freeMintBalance} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} />
 
+        <Prog/>
+
         <Stats contestStats={contestStats} bottlesMinted={totalSupply} accumulated={contestBalance} statsRef={statsRef}/>
 
         {liveBottles && liveBottles > 0 ? 
-        <Profile liveBottles={liveBottles} contestStats={contestStats} totalBottles={totalBottles}/>
+        <Profile v1Balance={v1Balance} v2Balance={v2Balance} liveBottles={liveBottles} contestStats={contestStats} totalBottles={totalBottles}/>
         :
         <></>
         }
 
         <Celebration open={party} setOpen={partySet} />
 
-        <Vending open={mintCard} setOpen={mintSet} setCelebrate={partySet} proof={walletInfo.friendProof} promoProof={walletInfo.promoProof} grabbies={upForGrabs} freebies={freeMintBalance} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} totalSupply={totalSupply} contestStats={contestStats}/>
+        <Vending open={mintCard} setOpen={mintSet} setCelebrate={partySet} price={bottlePrice} friendPrice={friendPrice} promoPrice={promoPrice} proof={walletInfo.friendProof} promoProof={walletInfo.promoProof} grabbies={upForGrabs} freebies={freeMintBalance} isPromoFriend={walletInfo.isPromoFriend} isFriend={walletInfo.isFriend} totalSupply={totalSupply} contestStats={contestStats}/>
 
         <Feature />
+
+        <FAQ />
 
         <Team />
 

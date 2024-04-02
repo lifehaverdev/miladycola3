@@ -1,3 +1,4 @@
+export const chainId = 11155111;
 export const ercMiladyCa = '0xaCDF15788B26C2323cb3422D49d60631e67732E2'//0x227c7DF69D3ed1ae7574A1a7685fDEd90292EB48';
 export const ercMiladyAbi = 
 [{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}] as const;

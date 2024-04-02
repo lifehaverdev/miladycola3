@@ -31,6 +31,9 @@ type VendingProps = {
     open: boolean,
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
     setCelebrate: React.Dispatch<React.SetStateAction<boolean>>
+    price: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
+    friendPrice: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
+    promoPrice: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
     proof: string[];
     promoProof: string[];
     grabbies:{ error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
@@ -55,13 +58,18 @@ type VendingProps = {
 
 type ContestArray = [bigint,bigint,bigint,bigint];
 
-export default function Vending({ open, setOpen, setCelebrate, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend, totalSupply,  contestStats }:VendingProps) {
-    const [priceInfo, setPriceInfo] = useState({
-      bottlePrice: 0,
-      friendPrice: 0,
-      promoPrice: 0
-    })  
+export default function Vending({ open, setOpen, setCelebrate, price, friendPrice, promoPrice, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend, totalSupply,  contestStats }:VendingProps) {
+    // const [priceInfo, setPriceInfo] = useState({
+    //   bottlePrice: 0,
+    //   friendPrice: 0,
+    //   promoPrice: 0
+    // })  
     const [bottleAmount, setBottleAmount] = useState(1);
+
+    let bottleP = 0;
+    let friendP = 0;
+    let promoP = 0;
+    
     let lastBottle = 1;
     if(
       typeof contestStats != 'undefined' 
@@ -71,6 +79,9 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
       const contestArray:Array<BigInt> = Object.values(contestStats.result)
       lastBottle = smol("lastBottle",contestArray[2]);
     }
+    if(typeof price != 'undefined') {bottleP = smol("price",price.result);}
+    if(typeof friendPrice != 'undefined') {friendP = smol("price",friendPrice.result);}
+    if(typeof promoPrice != 'undefined') {promoP = smol("price",promoPrice.result);}
     
     const { data:hash, isPending, isSuccess, writeContract } = useWriteContract();
     const colaContract = {
@@ -78,20 +89,20 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
         abi: colaAbi
     } as const
 
-    const readBottlePrice = useReadContract({
-        ...colaContract,
-        functionName: 'price'
-    })
+    // const readBottlePrice = useReadContract({
+    //     ...colaContract,
+    //     functionName: 'price'
+    // })
 
-    const readFriendPrice = useReadContract({
-        ...colaContract,
-        functionName: 'friendPrice'
-    })
+    // const readFriendPrice = useReadContract({
+    //     ...colaContract,
+    //     functionName: 'friendPrice'
+    // })
 
-    const readPromoPrice = useReadContract({
-      ...colaContract,
-      functionName: 'promoPrice'
-    })
+    // const readPromoPrice = useReadContract({
+    //   ...colaContract,
+    //   functionName: 'promoPrice'
+    // })
 
 
   const MintButton = () => {
@@ -129,7 +140,7 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
           args: [
               BigInt(amount)
           ],
-          value: parseEther(JSON.stringify(bottleAmount * priceInfo.bottlePrice))
+          value: parseEther(JSON.stringify(bottleAmount * bottleP))
         })
     }
 
@@ -141,7 +152,7 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
           BigInt(amount),
           proof as readonly `0x${string}`[]
         ],
-        value: parseEther(JSON.stringify(bottleAmount * priceInfo.friendPrice))
+        value: parseEther(JSON.stringify(bottleAmount * friendP))
       })
     }
 
@@ -153,7 +164,7 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
           BigInt(amount),
           promoProof as readonly `0x${string}`[]
         ],
-        value: parseEther(JSON.stringify(bottleAmount * priceInfo.promoPrice))
+        value: parseEther(JSON.stringify(bottleAmount * promoP))
       })
     }
 
@@ -199,18 +210,18 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
       }
     }
 
-    useEffect(() => {
-        //console.log(readFriendPrice,readBottlePrice);
-        if(readFriendPrice.isSuccess === true){
-            priceInfo.friendPrice = reviver(serialize({key: "friendPrice", value: readFriendPrice.data}));
-        }
-        if(readBottlePrice.isSuccess === true){
-            priceInfo.bottlePrice = reviver(serialize({key: "bottlePrice", value: readBottlePrice.data}));
-        }
-        if(readPromoPrice.isSuccess === true){
-          priceInfo.promoPrice = reviver(serialize({key: "promoPrice", value: readPromoPrice.data}))
-        }
-    })
+    // useEffect(() => {
+    //     //console.log(readFriendPrice,readBottlePrice);
+    //     if(readFriendPrice.isSuccess === true){
+    //         priceInfo.friendPrice = reviver(serialize({key: "friendPrice", value: readFriendPrice.data}));
+    //     }
+    //     if(readBottlePrice.isSuccess === true){
+    //         priceInfo.bottlePrice = reviver(serialize({key: "bottlePrice", value: readBottlePrice.data}));
+    //     }
+    //     if(readPromoPrice.isSuccess === true){
+    //       priceInfo.promoPrice = reviver(serialize({key: "promoPrice", value: readPromoPrice.data}))
+    //     }
+    // })
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -269,12 +280,12 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
                                 return 0
                             }
                             if(isPromoFriend) {
-                              return (priceInfo.promoPrice * bottleAmount).toFixed(5);
+                              return (promoP * bottleAmount).toFixed(5);
                             } 
                             if(isFriend) {
-                                return (priceInfo.friendPrice * bottleAmount).toFixed(5);
+                                return (friendP * bottleAmount).toFixed(5);
                             }   
-                            return (priceInfo.bottlePrice * bottleAmount).toFixed(5);
+                            return (bottleP * bottleAmount).toFixed(5);
                         })()}
                         {product.price}</p>
                         <div className="mt-3">

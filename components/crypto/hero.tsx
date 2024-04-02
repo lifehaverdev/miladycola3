@@ -16,7 +16,6 @@ const navigation = [
 interface HeroProps {
   scroll1: () => void;
   mintOpen: () => void;
-  //grabbies:{ error: Error | undefined, result:BigInt | undefined , status:string} | undefined; 
   grabbies: { error?: undefined; result: bigint; status: "success"; } | { error: Error; result?: undefined; status: "failure"; } | undefined;
   freebies: { error: Error; result?: undefined; status: "failure"; } | { error?: undefined; result: bigint; status: "success"; } | undefined;
   isPromoFriend:boolean;
