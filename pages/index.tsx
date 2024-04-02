@@ -228,10 +228,13 @@ const Home: NextPage = () => {
   
   //console.log('cutOff number ',smol("cutOff",cutOffBottle.result))
   // bottleNoti.filter((x) => x.name != "Up For Grabs")
-  const liveBottles = v3Tokens?.result.filter((x) => x >= cutOffBottle?.result ).length
-  console.log('liveBottles',liveBottles)
-  console.log('saleOn',saleOn,'promo',promo,'totalSupply',totalSupply,'upForGrabs',upForGrabs,'freeMintBalance',freeMintBalance,'bottlePrice',bottlePrice,'friendPrice',friendPrice,'promoPrice',promoPrice,'cutOffBottle',cutOffBottle,'v3Tokens',v3Tokens,'v1Balance',v1Balance,'v2Balance',v2Balance,'raffleBalance',contestBalance,'raffleStats',contestStats)
-  
+  let liveBottles;
+  let totalBottles;
+  if(v3Tokens && typeof v3Tokens.result != 'undefined' && cutOffBottle && typeof cutOffBottle.result != 'undefined'){
+    liveBottles = v3Tokens?.result.filter((x) => x >= cutOffBottle?.result ).length
+    totalBottles = v3Tokens.result.length;
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -253,8 +256,8 @@ const Home: NextPage = () => {
 
         <Stats contestStats={contestStats} bottlesMinted={totalSupply} accumulated={contestBalance} statsRef={statsRef}/>
 
-        {walletInfo.liveBottles > 0 ? 
-        <Profile liveBottles={liveBottles} contestStats={contestStats} totalBottles={walletInfo.totalBottles}/>
+        {liveBottles && liveBottles > 0 ? 
+        <Profile liveBottles={liveBottles} contestStats={contestStats} totalBottles={totalBottles}/>
         :
         <></>
         }

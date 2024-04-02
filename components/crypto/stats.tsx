@@ -28,9 +28,9 @@ interface StatProps {
         result: unknown;
         status: "success";
     } | {
-        error?: undefined;
-        result: ContestArray;
-        status: "success";
+        error?: Error;
+        result: null;
+        status: "null";
     } | undefined;
       statsRef: React.RefObject<HTMLDListElement>;
 }
@@ -47,7 +47,19 @@ const Stats
 //: React.FC<StatProps> 
 = ({ bottlesMinted, accumulated, contestStats, statsRef }:StatProps) => {
   //console.log('stats props', bottlesMinted, accumulated, contestStats, statsRef)
-  const odds = parseFloat((1/smol("end",contestStats?.result[2] - contestStats?.result[1])).toFixed(4));
+  let odds = 1;
+  let winners = 1;
+  if(
+  typeof contestStats != 'undefined' 
+  && typeof contestStats.result != 'undefined'
+  && contestStats.result != null
+  ){
+    const contestArray:Array<BigInt> = Object.values(contestStats.result)
+    const end = smol('end',contestArray[2]);
+    const start = smol('start',contestArray[1]);
+    odds = parseFloat((1/(end - start)).toFixed(4));
+    winners = smol('winners',contestArray[0]) + 1;
+  }
   
   // if(contestStats && contestStats.status == "success" && 
   //   Array.isArray(contestStats.result) &&
@@ -66,7 +78,7 @@ const Stats
   let stats: Stat[] = [
     { name: 'Bottles Minted', value: smol("totalSupply", bottlesMinted?.result) },
     //{ name: 'Bottles Minted', value: warChest },
-    { name: 'MiladyCola Winners', value: smol("winners",contestStats?.result[0])},
+    { name: 'MiladyCola Winners', value: winners},
     { name: 'Milady Accumulated', value: smol("raffleBalance", accumulated?.result) },
     //{ name: 'Milady Accumulated', value: warChest},
     { name: 'Current Raffle Odds', value: odds},

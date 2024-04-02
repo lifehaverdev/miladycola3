@@ -47,21 +47,31 @@ type VendingProps = {
       result: unknown;
       status: "success";
   } | {
-      error?: undefined;
-      result: ContestArray;
-      status: "success";
+      error?: Error;
+      result: null;
+      status: "failure";
   } | undefined;
 }
 
 type ContestArray = [bigint,bigint,bigint,bigint];
 
-export default function Vending({ open, setOpen, setCelebrate, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend, totalSupply,  lastBottle }:VendingProps) {
+export default function Vending({ open, setOpen, setCelebrate, proof, promoProof, grabbies, freebies, isFriend, isPromoFriend, totalSupply,  contestStats }:VendingProps) {
     const [priceInfo, setPriceInfo] = useState({
       bottlePrice: 0,
       friendPrice: 0,
       promoPrice: 0
     })  
     const [bottleAmount, setBottleAmount] = useState(1);
+    let lastBottle = 1;
+    if(
+      typeof contestStats != 'undefined' 
+      && typeof contestStats.result != 'undefined'
+      && contestStats.result != null
+      ){
+      const contestArray:Array<BigInt> = Object.values(contestStats.result)
+      lastBottle = smol("lastBottle",contestArray[2]);
+    }
+    
     const { data:hash, isPending, isSuccess, writeContract } = useWriteContract();
     const colaContract = {
         address: colaCa,
@@ -97,8 +107,8 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
             isPending ? "Pending..." : 
             isPromoFriend ? "Promo Mint" : 
             isFriend ? "Friend Mint" : 
-            grabbies && grabbies?.result > 0n ? "Grab Free Mint" :
-            grabbies && freebies?.result > 0n ? "Freebie Mint" :
+            grabbies && typeof grabbies.result != 'undefined' && grabbies?.result > 0n ? "Grab Free Mint" :
+            freebies && typeof freebies.result != 'undefined' && freebies?.result > 0n ? "Freebie Mint" :
             isConfirming ? "Confirming..." :
             isConfirmed ? "The Bottles are on your Tab!" :
             "Mint"
@@ -176,9 +186,9 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
     async function submit(e: React.FormEvent<HTMLFormElement>) {
       e.preventDefault() 
       console.log('submitting?');
-      if(grabbies && grabbies?.result > 0n){
+      if(grabbies && typeof grabbies.result != 'undefined' && grabbies?.result > 0n){
         grabMint();
-      } else if (freebies && freebies?.result > 0n){
+      } else if (freebies && typeof freebies.result != 'undefined' && freebies?.result > 0n){
         freebieMint();
       } else if (isPromoFriend){
         promoMint(bottleAmount,promoProof);
@@ -252,10 +262,10 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
                           Product information
                         </h3>
                         <p className="text-2xl text-gray-900">{(() => {
-                            if(freebies && freebies?.result > 0n){
+                            if(freebies && typeof freebies.result != 'undefined' && freebies?.result > 0n){
                                 return 0
                             }
-                            if(grabbies && grabbies?.result > 0n){
+                            if(grabbies && typeof grabbies.result != 'undefined' && grabbies?.result > 0n){
                                 return 0
                             }
                             if(isPromoFriend) {
@@ -292,7 +302,7 @@ export default function Vending({ open, setOpen, setCelebrate, proof, promoProof
                       </section>
                       <section aria-labelledby="options-heading" className="mt-6">
                         {
-                                    ((freebies && freebies?.result > 0n) || (grabbies && grabbies?.result > 0)) ?
+                                    ((freebies && typeof freebies.result != 'undefined' && freebies?.result > 0n) || (grabbies && typeof grabbies.result != 'undefined' && grabbies?.result > 0)) ?
                                     (
                                       <MintButton/>
                                     ):(
